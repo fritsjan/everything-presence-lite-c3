@@ -28,7 +28,6 @@ esphome:
           red: 50%
           green: 50%
           blue: 0%
-      - script.execute: illuminance_measurement_loop
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -151,16 +150,10 @@ script:
       # Start de BH1750 meting (herstel via on_raw_value callback)
       - component.update: illuminance_sensor
 
-  - id: illuminance_measurement_loop
-    mode: restart
+interval:
+  - interval: ${illuminance_update_interval}
     then:
-      - while:
-          condition:
-            lambda: 'return true;'
-          then:
-            - script.execute: measure_lux
-            - script.wait: measure_lux
-            - delay: !lambda "return (uint32_t)(id(illuminance_interval_ui).state * 1000);"
+      - script.execute: measure_lux
 
 light:
   - platform: status_led
@@ -224,23 +217,6 @@ number:
     entity_category: config
     on_value:
       - script.execute: measure_lux
-
-  - platform: template
-    name: "Illuminance Update Interval"
-    id: illuminance_interval_ui
-    unit_of_measurement: "s"
-    min_value: 10
-    max_value: 600
-    step: 1
-    mode: slider
-    update_interval: never
-    optimistic: true
-    restore_value: true
-    initial_value: 60
-    icon: "mdi:timer-outline"
-    entity_category: config
-    on_value:
-      - script.execute: illuminance_measurement_loop
 
 sensor:
   - platform: bh1750
