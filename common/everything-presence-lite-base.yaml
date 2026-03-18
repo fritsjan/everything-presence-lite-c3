@@ -23,13 +23,15 @@ esphome:
           }
 
 esp32:
-  board: esp32dev
+  board: esp32-c3-devkitm-1
+  variant: esp32c3
   framework:
     type: esp-idf
 
-# Enable logging
+# Enable logging (use USB_SERIAL_JTAG so UART0 on GPIO20/21 is free for LD2450)
 logger:
   level: ${log_level}
+  hardware_uart: USB_SERIAL_JTAG
 
 # Enable Home Assistant API
 api:
@@ -72,17 +74,53 @@ improv_serial:
 
 i2c:
 -  id: bus_a
-   sda: 21
-   scl: 22
+   sda: 0
+   scl: 1
    scan: true
 
 light:
   - platform: status_led
     name: ESP32 LED
     id: esp32_led
-    pin: GPIO14
+    pin: GPIO8
     internal: False
     restore_mode: ALWAYS_OFF
+    entity_category: config
+
+  - platform: esp32_rmt_led_strip
+    id: rgb_strip
+    pin: GPIO4
+    num_leds: 3
+    rgb_order: GRB
+    chipset: WS2812
+    name: "NeoPixel Strip"
+    internal: true
+
+  - platform: partition
+    name: "NeoPixel 1"
+    id: neopixel_1
+    segments:
+      - id: rgb_strip
+        from: 0
+        to: 0
+    entity_category: config
+
+  - platform: partition
+    name: "NeoPixel 2"
+    id: neopixel_2
+    segments:
+      - id: rgb_strip
+        from: 1
+        to: 1
+    entity_category: config
+
+  - platform: partition
+    name: "NeoPixel 3"
+    id: neopixel_3
+    segments:
+      - id: rgb_strip
+        from: 2
+        to: 2
     entity_category: config
 
 number:
@@ -122,7 +160,7 @@ sensor:
 binary_sensor:
   - platform: gpio
     pin:
-      number: 0
+      number: 9
       inverted: true
     id: flash_button
     internal: True

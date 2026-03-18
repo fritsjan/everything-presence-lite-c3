@@ -1142,12 +1142,12 @@ text:
 uart:
   id: uart_bus
   tx_pin: 
-    number: GPIO17
+    number: GPIO21
     mode:
       input: true
       pullup: true
   rx_pin: 
-    number: GPIO16
+    number: GPIO20
     mode:
       input: true
       pullup: true
@@ -1171,6 +1171,16 @@ uart:
           if (bytes.size() != 30) {
             ESP_LOGW("LD2450", "Expected 30 bytes but received %hu!", bytes.size());
             return;
+          }
+
+          // Temporarily blank NeoPixels during LD2450 measurement processing
+          // to avoid RMT interference with UART reception
+          {
+            auto *strip = id(rgb_strip).get_output();
+            for (int i = 0; i < strip->size(); i++) {
+              (*strip)[i] = light::ESPColor(0, 0, 0);
+            }
+            strip->schedule_show();
           }
 
           bool update_entities = false;
