@@ -21,6 +21,13 @@ esphome:
           } else {
             id(firmware_co2).publish_state("Disabled");
           }
+      # turn on neopixel 1
+      - light.turn_on:
+          id: neopixel_1
+          brightness: 50%
+          red: 50%
+          green: 50%
+          blue: 0%
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -69,6 +76,24 @@ ota:
 http_request:
 
 wifi:
+  #on connect neopixel 1 green, on disconnect neopixel 1 red
+  on_connect:
+    then:
+      - light.turn_on:
+          id: neopixel_1
+          brightness: 50%
+          red: 0%
+          green: 50%
+          blue: 0%
+  on_disconnect:
+    then:
+      - light.turn_on:
+          id: neopixel_1
+          brightness: 50%
+          red: 50%
+          green: 0%
+          blue: 0%
+
 
 improv_serial:
 
@@ -77,6 +102,96 @@ i2c:
    sda: 0
    scl: 1
    scan: true
+
+globals:
+  - id: neopixel_1_was_on
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: neopixel_1_brightness
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_1_red
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_1_green
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_1_blue
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_2_was_on
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: neopixel_2_brightness
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_2_red
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_2_green
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_2_blue
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_3_was_on
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: neopixel_3_brightness
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_3_red
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_3_green
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+  - id: neopixel_3_blue
+    type: float
+    restore_value: no
+    initial_value: "0.0"
+
+script:
+  - id: measure_illuminance_with_led_pause
+    mode: restart
+    then:
+      - lambda: |-
+          id(neopixel_1_was_on) = id(neopixel_1).remote_values.is_on();
+          id(neopixel_1_brightness) = id(neopixel_1).remote_values.get_brightness();
+          id(neopixel_1_red) = id(neopixel_1).remote_values.get_red();
+          id(neopixel_1_green) = id(neopixel_1).remote_values.get_green();
+          id(neopixel_1_blue) = id(neopixel_1).remote_values.get_blue();
+
+          id(neopixel_2_was_on) = id(neopixel_2).remote_values.is_on();
+          id(neopixel_2_brightness) = id(neopixel_2).remote_values.get_brightness();
+          id(neopixel_2_red) = id(neopixel_2).remote_values.get_red();
+          id(neopixel_2_green) = id(neopixel_2).remote_values.get_green();
+          id(neopixel_2_blue) = id(neopixel_2).remote_values.get_blue();
+
+          id(neopixel_3_was_on) = id(neopixel_3).remote_values.is_on();
+          id(neopixel_3_brightness) = id(neopixel_3).remote_values.get_brightness();
+          id(neopixel_3_red) = id(neopixel_3).remote_values.get_red();
+          id(neopixel_3_green) = id(neopixel_3).remote_values.get_green();
+          id(neopixel_3_blue) = id(neopixel_3).remote_values.get_blue();
+      - light.turn_off: neopixel_1
+      - light.turn_off: neopixel_2
+      - light.turn_off: neopixel_3
+      - delay: 250ms
+      - component.update: illuminance_sensor
 
 light:
   - platform: status_led
@@ -139,7 +254,7 @@ number:
     icon: "mdi:brightness-5"
     entity_category: config
     on_value:
-      - lambda: 'id(illuminance_sensor).update();'
+      - script.execute: measure_illuminance_with_led_pause
 
 sensor:
   - platform: bh1750
@@ -147,8 +262,33 @@ sensor:
     id: illuminance_sensor
     i2c_id: bus_a
     address: 0x23
-    update_interval: ${illuminance_update_interval}
+    update_interval: never
     accuracy_decimals: 0
+    on_value:
+      - lambda: |-
+          if (id(neopixel_1_was_on)) {
+            auto call = id(neopixel_1).turn_on();
+            call.set_transition_length(0);
+            call.set_brightness(id(neopixel_1_brightness));
+            call.set_rgb(id(neopixel_1_red), id(neopixel_1_green), id(neopixel_1_blue));
+            call.perform();
+          }
+
+          if (id(neopixel_2_was_on)) {
+            auto call = id(neopixel_2).turn_on();
+            call.set_transition_length(0);
+            call.set_brightness(id(neopixel_2_brightness));
+            call.set_rgb(id(neopixel_2_red), id(neopixel_2_green), id(neopixel_2_blue));
+            call.perform();
+          }
+
+          if (id(neopixel_3_was_on)) {
+            auto call = id(neopixel_3).turn_on();
+            call.set_transition_length(0);
+            call.set_brightness(id(neopixel_3_brightness));
+            call.set_rgb(id(neopixel_3_red), id(neopixel_3_green), id(neopixel_3_blue));
+            call.perform();
+          }
     filters:
       - lambda: "return x + id(illuminance_offset_ui).state;"
       - or:
@@ -156,6 +296,11 @@ sensor:
         - delta: 5
       - clamp:
           min_value: 0
+
+interval:
+  - interval: ${illuminance_update_interval}
+    then:
+      - script.execute: measure_illuminance_with_led_pause
 
 binary_sensor:
   - platform: gpio
