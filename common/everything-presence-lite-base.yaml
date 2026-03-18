@@ -109,62 +109,14 @@ globals:
     type: bool
     restore_value: no
     initial_value: "false"
-  - id: neopixel_1_brightness
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_1_red
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_1_green
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_1_blue
-    type: float
-    restore_value: no
-    initial_value: "0.0"
   - id: neopixel_2_was_on
     type: bool
     restore_value: no
     initial_value: "false"
-  - id: neopixel_2_brightness
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_2_red
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_2_green
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_2_blue
-    type: float
-    restore_value: no
-    initial_value: "0.0"
   - id: neopixel_3_was_on
     type: bool
     restore_value: no
     initial_value: "false"
-  - id: neopixel_3_brightness
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_3_red
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_3_green
-    type: float
-    restore_value: no
-    initial_value: "0.0"
-  - id: neopixel_3_blue
-    type: float
-    restore_value: no
-    initial_value: "0.0"
 
 script:
   - id: measure_illuminance_with_led_pause
@@ -172,28 +124,44 @@ script:
     then:
       - lambda: |-
           id(neopixel_1_was_on) = id(neopixel_1).remote_values.is_on();
-          id(neopixel_1_brightness) = id(neopixel_1).remote_values.get_brightness();
-          id(neopixel_1_red) = id(neopixel_1).remote_values.get_red();
-          id(neopixel_1_green) = id(neopixel_1).remote_values.get_green();
-          id(neopixel_1_blue) = id(neopixel_1).remote_values.get_blue();
-
           id(neopixel_2_was_on) = id(neopixel_2).remote_values.is_on();
-          id(neopixel_2_brightness) = id(neopixel_2).remote_values.get_brightness();
-          id(neopixel_2_red) = id(neopixel_2).remote_values.get_red();
-          id(neopixel_2_green) = id(neopixel_2).remote_values.get_green();
-          id(neopixel_2_blue) = id(neopixel_2).remote_values.get_blue();
-
           id(neopixel_3_was_on) = id(neopixel_3).remote_values.is_on();
-          id(neopixel_3_brightness) = id(neopixel_3).remote_values.get_brightness();
-          id(neopixel_3_red) = id(neopixel_3).remote_values.get_red();
-          id(neopixel_3_green) = id(neopixel_3).remote_values.get_green();
-          id(neopixel_3_blue) = id(neopixel_3).remote_values.get_blue();
-      - light.turn_off: neopixel_1
-      - light.turn_off: neopixel_2
-      - light.turn_off: neopixel_3
-      - delay: 250ms
-      - component.update: illuminance_sensor
-      - delay: 250ms
+      - if:
+          condition:
+            or:
+              - light.is_on: neopixel_1
+              - light.is_on: neopixel_2
+              - light.is_on: neopixel_3
+          then:
+            - light.turn_off:
+                id: neopixel_1
+                transition_length: 0s
+            - light.turn_off:
+                id: neopixel_2
+                transition_length: 0s
+            - light.turn_off:
+                id: neopixel_3
+                transition_length: 0s
+            - delay: 200ms
+            - component.update: illuminance_sensor
+            - delay: 200ms
+            - if:
+                condition:
+                  lambda: 'return id(neopixel_1_was_on);'
+                then:
+                  - light.turn_on: neopixel_1
+            - if:
+                condition:
+                  lambda: 'return id(neopixel_2_was_on);'
+                then:
+                  - light.turn_on: neopixel_2
+            - if:
+                condition:
+                  lambda: 'return id(neopixel_3_was_on);'
+                then:
+                  - light.turn_on: neopixel_3
+          else:
+            - component.update: illuminance_sensor
 
   - id: illuminance_measurement_loop
     mode: restart
@@ -294,31 +262,6 @@ sensor:
     address: 0x23
     update_interval: never
     accuracy_decimals: 0
-    on_value:
-      - lambda: |-
-          if (id(neopixel_1_was_on)) {
-            auto call = id(neopixel_1).turn_on();
-            call.set_transition_length(0);
-            call.set_brightness(id(neopixel_1_brightness));
-            call.set_rgb(id(neopixel_1_red), id(neopixel_1_green), id(neopixel_1_blue));
-            call.perform();
-          }
-
-          if (id(neopixel_2_was_on)) {
-            auto call = id(neopixel_2).turn_on();
-            call.set_transition_length(0);
-            call.set_brightness(id(neopixel_2_brightness));
-            call.set_rgb(id(neopixel_2_red), id(neopixel_2_green), id(neopixel_2_blue));
-            call.perform();
-          }
-
-          if (id(neopixel_3_was_on)) {
-            auto call = id(neopixel_3).turn_on();
-            call.set_transition_length(0);
-            call.set_brightness(id(neopixel_3_brightness));
-            call.set_rgb(id(neopixel_3_red), id(neopixel_3_green), id(neopixel_3_blue));
-            call.perform();
-          }
     filters:
       - lambda: "return x + id(illuminance_offset_ui).state;"
       - or:
