@@ -5,7 +5,7 @@ esphome:
   name_add_mac_suffix: True
   project: 
     name: EverythingSmartTechnology.Everything Presence Lite
-    version: "1.4.2"
+    version: "1.4.2.beta"
   on_boot:
     priority: -100
     then:
@@ -28,6 +28,7 @@ esphome:
           red: 50%
           green: 50%
           blue: 0%
+      - script.execute: illuminance_measurement_loop
 
 esp32:
   board: esp32-c3-devkitm-1
@@ -192,6 +193,18 @@ script:
       - light.turn_off: neopixel_3
       - delay: 250ms
       - component.update: illuminance_sensor
+      - delay: 250ms
+
+  - id: illuminance_measurement_loop
+    mode: restart
+    then:
+      - while:
+          condition:
+            lambda: 'return true;'
+          then:
+            - script.execute: measure_illuminance_with_led_pause
+            - script.wait: measure_illuminance_with_led_pause
+            - delay: !lambda "return (uint32_t)(id(illuminance_interval_ui).state * 1000);"
 
 light:
   - platform: status_led
@@ -256,6 +269,23 @@ number:
     on_value:
       - script.execute: measure_illuminance_with_led_pause
 
+  - platform: template
+    name: "Illuminance Update Interval"
+    id: illuminance_interval_ui
+    unit_of_measurement: "s"
+    min_value: 2
+    max_value: 600
+    step: 1
+    mode: slider
+    update_interval: never
+    optimistic: true
+    restore_value: true
+    initial_value: 10
+    icon: "mdi:timer-outline"
+    entity_category: config
+    on_value:
+      - script.execute: illuminance_measurement_loop
+
 sensor:
   - platform: bh1750
     name: Illuminance
@@ -296,11 +326,6 @@ sensor:
         - delta: 5
       - clamp:
           min_value: 0
-
-interval:
-  - interval: ${illuminance_update_interval}
-    then:
-      - script.execute: measure_illuminance_with_led_pause
 
 binary_sensor:
   - platform: gpio

@@ -1,7 +1,6 @@
 substitutions:
   name: "everything-presence-lite"
   friendly_name: "EPL C3"
-  illuminance_update_interval: "10s"
   hidden_ssid: "false"
   log_level: DEBUG
 
