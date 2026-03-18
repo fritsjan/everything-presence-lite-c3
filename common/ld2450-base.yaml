@@ -1178,11 +1178,10 @@ uart:
           // The partition lights will automatically restore the correct colors
           // on the next main loop iteration.
           {
-            auto *strip = id(rgb_strip).get_output();
-            if (strip != nullptr) {
-              for (int i = 0; i < strip->size(); i++) {
-                (*strip)[i] = light::ESPColor(0, 0, 0);
-              }
+            auto *out = id(rgb_strip).get_output();
+            if (out != nullptr) {
+              auto *strip = static_cast<light::AddressableLight *>(out);
+              strip->all() = Color(0, 0, 0);
               strip->schedule_show();
             }
           }

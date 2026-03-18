@@ -92,7 +92,7 @@ light:
     pin: GPIO4
     num_leds: 3
     rgb_order: GRB
-    chipset: WS2812
+    chipset: SK6812
     name: "NeoPixel Strip"
     internal: true
 
@@ -206,11 +206,11 @@ button:
             base_url += variant;
           }
 
-          if (id(firmware_ble).state == "Disabled") {
+          if (id(firmware_ble).current_option().value() == "Disabled") {
             base_url += "-no-ble";
           }
 
-          if (id(firmware_co2).state == "Enabled") {
+          if (id(firmware_co2).current_option().value() == "Enabled") {
             base_url += "-co2";
           }
 
