@@ -107,61 +107,49 @@ i2c:
 globals:
   - id: neopixel_1_was_on
     type: bool
-    restore_value: no
+    restore_value: false
     initial_value: "false"
   - id: neopixel_2_was_on
     type: bool
-    restore_value: no
+    restore_value: false
     initial_value: "false"
   - id: neopixel_3_was_on
     type: bool
-    restore_value: no
+    restore_value: false
     initial_value: "false"
 
 script:
-  - id: measure_illuminance_with_led_pause
-    mode: restart
+  - id: measure_lux
     then:
+      # Sla de huidige aan/uit-staat op van elke NeoPixel
       - lambda: |-
-          id(neopixel_1_was_on) = id(neopixel_1).remote_values.is_on();
-          id(neopixel_2_was_on) = id(neopixel_2).remote_values.is_on();
-          id(neopixel_3_was_on) = id(neopixel_3).remote_values.is_on();
-      - if:
-          condition:
-            or:
-              - light.is_on: neopixel_1
-              - light.is_on: neopixel_2
-              - light.is_on: neopixel_3
-          then:
-            - light.turn_off:
-                id: neopixel_1
-                transition_length: 0s
-            - light.turn_off:
-                id: neopixel_2
-                transition_length: 0s
-            - light.turn_off:
-                id: neopixel_3
-                transition_length: 0s
-            - delay: 200ms
-            - component.update: illuminance_sensor
-            - delay: 200ms
-            - if:
-                condition:
-                  lambda: 'return id(neopixel_1_was_on);'
-                then:
-                  - light.turn_on: neopixel_1
-            - if:
-                condition:
-                  lambda: 'return id(neopixel_2_was_on);'
-                then:
-                  - light.turn_on: neopixel_2
-            - if:
-                condition:
-                  lambda: 'return id(neopixel_3_was_on);'
-                then:
-                  - light.turn_on: neopixel_3
-          else:
-            - component.update: illuminance_sensor
+          id(neopixel_1_was_on) = id(neopixel_1).current_values.is_on();
+          id(neopixel_2_was_on) = id(neopixel_2).current_values.is_on();
+          id(neopixel_3_was_on) = id(neopixel_3).current_values.is_on();
+      # - globals.set:
+      #     id: neopixel_1_was_on
+      #     value: !lambda return id(neopixel_1).current_values.is_on();
+      # - lambda: |-
+      #     ESP_LOGI("lux", "NeoPixel 1 was: %s", id(neopixel_1_was_on) ? "on" : "off");
+      # - globals.set:
+      #     id: neopixel_2_was_on
+      #     value: !lambda return id(neopixel_2).current_values.is_on();
+      # - lambda: |-
+      #     ESP_LOGI("lux", "NeoPixel 2 was: %s", id(neopixel_2_was_on) ? "on" : "off");
+      # - globals.set:
+      #     id: neopixel_3_was_on
+      #     value: !lambda return id(neopixel_3).current_values.is_on();
+      # - lambda: |-
+      #     ESP_LOGI("lux", "NeoPixel 3 was: %s", id(neopixel_3_was_on) ? "on" : "off");
+      - delay: 50ms
+      # Zet alle NeoPixels uit zodat ze de lichtmeting niet beïnvloeden
+      - light.turn_off: neopixel_1
+      - light.turn_off: neopixel_2
+      - light.turn_off: neopixel_3
+      # Wacht tot de LEDs zijn uitgedoofd
+      - delay: 200ms
+      # Start de BH1750 meting (herstel via on_raw_value callback)
+      - component.update: illuminance_sensor
 
   - id: illuminance_measurement_loop
     mode: restart
@@ -170,8 +158,8 @@ script:
           condition:
             lambda: 'return true;'
           then:
-            - script.execute: measure_illuminance_with_led_pause
-            - script.wait: measure_illuminance_with_led_pause
+            - script.execute: measure_lux
+            - script.wait: measure_lux
             - delay: !lambda "return (uint32_t)(id(illuminance_interval_ui).state * 1000);"
 
 light:
@@ -235,20 +223,20 @@ number:
     icon: "mdi:brightness-5"
     entity_category: config
     on_value:
-      - script.execute: measure_illuminance_with_led_pause
+      - script.execute: measure_lux
 
   - platform: template
     name: "Illuminance Update Interval"
     id: illuminance_interval_ui
     unit_of_measurement: "s"
-    min_value: 2
+    min_value: 10
     max_value: 600
     step: 1
     mode: slider
     update_interval: never
     optimistic: true
     restore_value: true
-    initial_value: 10
+    initial_value: 60
     icon: "mdi:timer-outline"
     entity_category: config
     on_value:
@@ -269,6 +257,24 @@ sensor:
         - delta: 5
       - clamp:
           min_value: 0
+    on_raw_value:
+      then:
+        # Herstel de staat van elke NeoPixel na de meting
+        - if:
+            condition:
+              lambda: 'return id(neopixel_1_was_on);'
+            then:
+              - light.turn_on: neopixel_1
+        - if:
+            condition:
+              lambda: 'return id(neopixel_2_was_on);'
+            then:
+              - light.turn_on: neopixel_2
+        - if:
+            condition:
+              lambda: 'return id(neopixel_3_was_on);'
+            then:
+              - light.turn_on: neopixel_3
 
 binary_sensor:
   - platform: gpio
