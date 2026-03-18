@@ -1173,19 +1173,6 @@ uart:
             return;
           }
 
-          // Temporarily blank NeoPixels during LD2450 measurement processing
-          // to avoid RMT interference with UART reception.
-          // The partition lights will automatically restore the correct colors
-          // on the next main loop iteration.
-          {
-            auto *out = id(rgb_strip).get_output();
-            if (out != nullptr) {
-              auto *strip = static_cast<light::AddressableLight *>(out);
-              strip->all() = Color(0, 0, 0);
-              strip->schedule_show();
-            }
-          }
-
           bool update_entities = false;
           if(id(extra_entities) != 0) {
             id(entities_update_count) += 1;
