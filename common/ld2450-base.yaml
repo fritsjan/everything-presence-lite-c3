@@ -1174,13 +1174,17 @@ uart:
           }
 
           // Temporarily blank NeoPixels during LD2450 measurement processing
-          // to avoid RMT interference with UART reception
+          // to avoid RMT interference with UART reception.
+          // The partition lights will automatically restore the correct colors
+          // on the next main loop iteration.
           {
             auto *strip = id(rgb_strip).get_output();
-            for (int i = 0; i < strip->size(); i++) {
-              (*strip)[i] = light::ESPColor(0, 0, 0);
+            if (strip != nullptr) {
+              for (int i = 0; i < strip->size(); i++) {
+                (*strip)[i] = light::ESPColor(0, 0, 0);
+              }
+              strip->schedule_show();
             }
-            strip->schedule_show();
           }
 
           bool update_entities = false;
