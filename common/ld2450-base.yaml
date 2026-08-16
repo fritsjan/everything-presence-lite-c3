@@ -224,6 +224,29 @@ switch:
     icon: "mdi:vector-polygon"
     disabled_by_default: false
 
+  - platform: template
+    name: "Multi Target"
+    id: multi_target_switch
+    optimistic: true
+    disabled_by_default: false
+    entity_category: config
+    turn_on_action:
+      - switch.turn_on: mmwave_configuration
+      - delay: 2s
+      - uart.write:
+          id: uart_bus
+          data: [0xFD, 0xFC, 0xFB, 0xFA, 0x02, 0x00, 0x90, 0x00, 0x04, 0x03, 0x02, 0x01]  # Turn on Multi Target
+      - delay: 2s
+      - switch.turn_off: mmwave_configuration
+    turn_off_action:
+      - switch.turn_on: mmwave_configuration
+      - delay: 2s
+      - uart.write:
+          id: uart_bus
+          data: [0xFD, 0xFC, 0xFB, 0xFA, 0x02, 0x00, 0x80, 0x00, 0x04, 0x03, 0x02, 0x01]  # Turn off Multi Target
+      - delay: 2s
+      - switch.turn_off: mmwave_configuration
+
 binary_sensor:
   - platform: template
     name: "Occupancy"
@@ -1142,12 +1165,12 @@ text:
 uart:
   id: uart_bus
   tx_pin: 
-    number: GPIO17
+    number: GPIO21
     mode:
       input: true
       pullup: true
   rx_pin: 
-    number: GPIO16
+    number: GPIO20
     mode:
       input: true
       pullup: true
