@@ -1,0 +1,21 @@
+{
+  "name": "Everything Presence Lite HA",
+  "version": "1.4.2.beta",
+  "home_assistant_domain": "esphome",
+  "new_install_skip_erase": false,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "ota": {
+        "path": "everything-presence-lite-ha/everything-presence-lite-esp32c3.ota.bin",
+        "md5": "1d46938331df0e936fcbfb80a308e7c7"
+      },
+      "parts": [
+        {
+          "path": "everything-presence-lite-ha/everything-presence-lite-esp32c3.factory.bin",
+          "offset": 0
+        }
+      ]
+    }
+  ]
+}
